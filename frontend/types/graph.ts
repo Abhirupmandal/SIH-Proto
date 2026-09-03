@@ -60,3 +60,8 @@ export interface GraphData {
   nodes: GraphNodeData[];
   edges: GraphEdgeData[];
 }
+
+export interface CytoscapeElement {
+  group?: 'nodes' | 'edges';
+  data: GraphNodeData | GraphEdgeData;
+}

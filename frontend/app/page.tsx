@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { GraphEdgeData } from '@/types/graph';
+import { GraphEdgeData, GraphNodeData, CytoscapeElement } from '@/types/graph';
 import { EvidenceModal } from '@/components/modals/EvidenceModal';
+import { IngestionModal } from '@/components/modals/IngestionModal';
 import { GraphCanvas, SAMPLE_NODES, SAMPLE_EDGES } from '@/components/GraphCanvas';
 import { TimelineSlider } from '@/components/controls/TimelineSlider';
 import {
@@ -16,16 +17,22 @@ import {
   Layers,
   Sparkles,
   CalendarRange,
+  UploadCloud,
 } from 'lucide-react';
 
 const MIN_DATE = '2026-08-10T00:00:00.000Z';
 const MAX_DATE = '2026-08-15T23:59:59.000Z';
 
 export default function Home() {
+  // Graph elements state initialized with baseline forensic dataset
+  const [nodes, setNodes] = useState<GraphNodeData[]>(SAMPLE_NODES);
+  const [edges, setEdges] = useState<GraphEdgeData[]>(SAMPLE_EDGES);
+
   const [selectedEdge, setSelectedEdge] = useState<GraphEdgeData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [currentTimestamp, setCurrentTimestamp] = useState<string>(MAX_DATE);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [isIngestOpen, setIsIngestOpen] = useState(false);
 
   // Auto-increment playback timer every 800ms
   useEffect(() => {
@@ -60,11 +67,11 @@ export default function Home() {
 
   // Filter edges: hide edges with timestamps > currentTimestamp
   const filteredEdges = useMemo(() => {
-    return SAMPLE_EDGES.filter((edge) => {
+    return edges.filter((edge) => {
       if (!edge.timestamp) return true;
       return new Date(edge.timestamp).getTime() <= currentDateVal;
     });
-  }, [currentDateVal]);
+  }, [edges, currentDateVal]);
 
   // Active node IDs connected to active edges
   const activeNodeIds = useMemo(() => {
@@ -78,7 +85,7 @@ export default function Home() {
 
   // Filter nodes: nodes with no active edges at that timestamp render with reduced opacity (0.25)
   const filteredNodes = useMemo(() => {
-    return SAMPLE_NODES.map((node) => {
+    return nodes.map((node) => {
       const isCreated = !node.createdAt || new Date(node.createdAt).getTime() <= currentDateVal;
       const hasActiveEdge = activeNodeIds.has(node.id);
       const opacity = hasActiveEdge ? 1 : isCreated ? 0.25 : 0.15;
@@ -87,7 +94,7 @@ export default function Home() {
         opacity,
       };
     });
-  }, [activeNodeIds, currentDateVal]);
+  }, [nodes, activeNodeIds, currentDateVal]);
 
   // Auto-deselect edge if it gets scrubbed out of temporal window
   useEffect(() => {
@@ -97,6 +104,37 @@ export default function Home() {
       }
     }
   }, [selectedEdge, currentDateVal]);
+
+  // Append new elements from Ingestion modal without duplicate node IDs
+  const handleIngestSuccess = (newElements: CytoscapeElement[]) => {
+    const newNodes: GraphNodeData[] = [];
+    const newEdges: GraphEdgeData[] = [];
+
+    newElements.forEach((el) => {
+      const data = el.data;
+      if ('source' in data && 'target' in data) {
+        newEdges.push(data as GraphEdgeData);
+      } else if ('id' in data) {
+        newNodes.push(data as GraphNodeData);
+      }
+    });
+
+    // Append new nodes ensuring no duplicate node IDs exist
+    setNodes((prevNodes) => {
+      const existingIds = new Set(prevNodes.map((n) => n.id));
+      const uniqueNewNodes = newNodes.filter((n) => !existingIds.has(n.id));
+      return [...prevNodes, ...uniqueNewNodes];
+    });
+
+    // Append new edges ensuring no duplicate edge IDs exist
+    setEdges((prevEdges) => {
+      const existingIds = new Set(prevEdges.map((e) => e.id));
+      const uniqueNewEdges = newEdges.filter((e) => !existingIds.has(e.id));
+      return [...prevEdges, ...uniqueNewEdges];
+    });
+
+    setIsIngestOpen(false);
+  };
 
   // Dynamic metrics calculated based on temporal window
   const activeTracedSum = useMemo(() => {
@@ -123,7 +161,7 @@ export default function Home() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 uppercase tracking-wide">
-                  PS ID: SIH26189
+                  PS ID: SIH26189 • Team AKATSUKI
                 </span>
                 <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
@@ -144,9 +182,21 @@ export default function Home() {
                 placeholder="Search suspect, FIR, phone, bank A/C..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-64 pl-9 pr-4 py-1.5 text-xs bg-slate-950/80 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-56 pl-9 pr-4 py-1.5 text-xs bg-slate-950/80 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
               />
             </div>
+
+            {/* Ingest Records Action Button */}
+            <button
+              type="button"
+              onClick={() => setIsIngestOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-all shadow-md shadow-indigo-600/30 border border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              title="Ingest FIR Narrative, CDR Tower Dump, or Bank Ledger"
+            >
+              <UploadCloud className="w-3.5 h-3.5" />
+              <span>Ingest Records</span>
+            </button>
+
             <div className="hidden lg:flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/60 text-slate-300">
               <Fingerprint className="w-3.5 h-3.5 text-indigo-400" />
               <span>CASE: #KSP-CYBER-2024-88</span>
@@ -157,7 +207,7 @@ export default function Home() {
 
       {/* Main Content Area */}
       <div className="max-w-7xl w-full mx-auto p-6 space-y-6 flex-1 flex flex-col">
-        {/* Intelligence Statistics Banner (Dynamic by Temporal Window) */}
+        {/* Intelligence Statistics Banner (Dynamic by Ingestion & Temporal Window) */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
             <div className="flex items-center justify-between">
@@ -165,7 +215,7 @@ export default function Home() {
               <Layers className="w-4 h-4 text-indigo-400" />
             </div>
             <div className="text-2xl font-bold text-white font-mono mt-2">
-              {filteredNodes.filter((n) => (n.opacity ?? 1) > 0.5).length} / {SAMPLE_NODES.length}
+              {filteredNodes.filter((n) => (n.opacity ?? 1) > 0.5).length} / {nodes.length}
             </div>
             <div className="text-[11px] text-indigo-400 mt-1">Grounded at scrub window</div>
           </div>
@@ -176,7 +226,7 @@ export default function Home() {
               <PhoneForwarded className="w-4 h-4 text-sky-400" />
             </div>
             <div className="text-2xl font-bold text-white font-mono mt-2">
-              {filteredEdges.length} / {SAMPLE_EDGES.length}
+              {filteredEdges.length} / {edges.length}
             </div>
             <div className="text-[11px] text-sky-400 mt-1">Chronological links revealed</div>
           </div>
@@ -244,6 +294,13 @@ export default function Home() {
           </div>
         </section>
       </div>
+
+      {/* Dynamic Record Ingestion Modal */}
+      <IngestionModal
+        isOpen={isIngestOpen}
+        onClose={() => setIsIngestOpen(false)}
+        onIngestSuccess={handleIngestSuccess}
+      />
 
       {/* Conditionally rendered Explainable AI (XAI) Evidence Modal */}
       <EvidenceModal
