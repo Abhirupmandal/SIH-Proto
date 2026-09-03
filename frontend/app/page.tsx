@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { GraphEdgeData, GraphNodeData, CytoscapeElement } from '@/types/graph';
 import { EvidenceModal } from '@/components/modals/EvidenceModal';
 import { IngestionModal } from '@/components/modals/IngestionModal';
@@ -18,7 +19,25 @@ import {
   Sparkles,
   CalendarRange,
   UploadCloud,
+  FileDown,
 } from 'lucide-react';
+
+// Dynamic import for React-PDF DossierDownloadButton with SSR disabled to prevent hydration mismatch
+const DossierDownloadButton = dynamic(
+  () => import('@/components/export/DossierPdf').then((mod) => mod.DossierDownloadButton),
+  {
+    ssr: false,
+    loading: () => (
+      <button
+        disabled
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 border border-slate-700 text-xs font-semibold"
+      >
+        <FileDown className="w-3.5 h-3.5" />
+        <span>Export Dossier (PDF)</span>
+      </button>
+    ),
+  }
+);
 
 const MIN_DATE = '2026-08-10T00:00:00.000Z';
 const MAX_DATE = '2026-08-15T23:59:59.000Z';
@@ -196,6 +215,14 @@ export default function Home() {
               <UploadCloud className="w-3.5 h-3.5" />
               <span>Ingest Records</span>
             </button>
+
+            {/* Export Dossier (PDF) Action Button */}
+            <DossierDownloadButton
+              caseId="#KSP-CYBER-2024-88"
+              jurisdiction="Crime Branch Unit 4 / Cyber Cell Central"
+              nodes={filteredNodes}
+              edges={filteredEdges}
+            />
 
             <div className="hidden lg:flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/60 text-slate-300">
               <Fingerprint className="w-3.5 h-3.5 text-indigo-400" />
