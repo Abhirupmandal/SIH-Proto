@@ -1,0 +1,350 @@
+{
+  "nodes": [
+    {
+      "id": "crime_fir_2024_cr0142",
+      "type": "CrimeCase",
+      "label": "FIR-2024-CR0142",
+      "metadata": {
+        "ps_name": "Andheri",
+        "date": "2024-03-15T00:00:00+00:00",
+        "text_snippet": "FIR-2024-CR0142 registered at PS Andheri. Suspect Ramesh Kumar alias Rama s/o Suresh Kumar, phone +91 9876543210, vehicle MH12AB1234, account 123456789012, co-accused Rakesh @ Bunty. Both were seen together.",
+        "evidence_source": "FIR-2024-CR0142"
+      }
+    },
+    {
+      "id": "phone_9876543210",
+      "type": "Phone",
+      "label": "9876543210",
+      "metadata": {
+        "evidence_source": "FIR-2024-CR0142",
+        "fir_no": "FIR-2024-CR0142",
+        "imei": "123456789012345",
+        "tower_ids": [
+          "TOWER_A",
+          "TOWER_C"
+        ]
+      }
+    },
+    {
+      "id": "account_123456789012",
+      "type": "Account",
+      "label": "123456789012",
+      "metadata": {
+        "evidence_source": "FIR-2024-CR0142",
+        "fir_no": "FIR-2024-CR0142"
+      }
+    },
+    {
+      "id": "crime_fir_2025_cr0999",
+      "type": "CrimeCase",
+      "label": "FIR-2025-CR0999",
+      "metadata": {
+        "ps_name": "Bandra",
+        "date": "2025-01-20T00:00:00+00:00",
+        "text_snippet": "Accused Sunil Kumar s/o Rajesh Kumar alias Sonu was found using phone 9876512345 and account 987654321098765432 and vehicle DL01AB1234. FIR-2025-CR0999",
+        "evidence_source": "FIR-2025-CR0999"
+      }
+    },
+    {
+      "id": "phone_9876512345",
+      "type": "Phone",
+      "label": "9876512345",
+      "metadata": {
+        "evidence_source": "FIR-2025-CR0999",
+        "fir_no": "FIR-2025-CR0999",
+        "imei": "123456789012347",
+        "tower_ids": [
+          "TOWER_A"
+        ]
+      }
+    },
+    {
+      "id": "account_987654321098765432",
+      "type": "Account",
+      "label": "987654321098765432",
+      "metadata": {
+        "evidence_source": "FIR-2025-CR0999",
+        "fir_no": "FIR-2025-CR0999"
+      }
+    },
+    {
+      "id": "phone_9123456789",
+      "type": "Phone",
+      "label": "9123456789",
+      "metadata": {
+        "evidence_source": "CDR Log",
+        "tower_ids": [
+          "TOWER_B"
+        ]
+      }
+    },
+    {
+      "id": "location_tower_a",
+      "type": "Location",
+      "label": "TOWER_A",
+      "metadata": {
+        "tower_id": "TOWER_A",
+        "evidence_source": "CDR Log"
+      }
+    },
+    {
+      "id": "location_tower_b",
+      "type": "Location",
+      "label": "TOWER_B",
+      "metadata": {
+        "tower_id": "TOWER_B",
+        "evidence_source": "CDR Log"
+      }
+    },
+    {
+      "id": "location_tower_c",
+      "type": "Location",
+      "label": "TOWER_C",
+      "metadata": {
+        "tower_id": "TOWER_C",
+        "evidence_source": "CDR Log"
+      }
+    },
+    {
+      "id": "suspect_ramesh_kumar",
+      "type": "Suspect",
+      "label": "Ramesh Kumar",
+      "metadata": {
+        "ps_name": "Andheri",
+        "aliases": [
+          "Rama"
+        ],
+        "evidence_source": "FIR-2024-CR0142",
+        "fir_nos": [
+          "FIR-2024-CR0142"
+        ],
+        "fir_no": "FIR-2024-CR0142",
+        "so_relations": [
+          {
+            "child": "Rama",
+            "father": "Suresh Kumar"
+          }
+        ],
+        "vehicles": [
+          "MH12AB1234"
+        ]
+      }
+    },
+    {
+      "id": "suspect_rakesh",
+      "type": "Suspect",
+      "label": "Rakesh",
+      "metadata": {
+        "ps_name": "Andheri",
+        "aliases": [
+          "Bunty"
+        ],
+        "evidence_source": "FIR-2024-CR0142",
+        "fir_nos": [
+          "FIR-2024-CR0142"
+        ],
+        "fir_no": "FIR-2024-CR0142"
+      }
+    },
+    {
+      "id": "suspect_sunil_kumar",
+      "type": "Suspect",
+      "label": "Sunil Kumar",
+      "metadata": {
+        "ps_name": "Bandra",
+        "aliases": [
+          "Sonu"
+        ],
+        "evidence_source": "FIR-2025-CR0999",
+        "fir_nos": [
+          "FIR-2025-CR0999"
+        ],
+        "fir_no": "FIR-2025-CR0999",
+        "so_relations": [
+          {
+            "child": "Sunil Kumar",
+            "father": "Rajesh Kumar"
+          }
+        ],
+        "vehicles": [
+          "DL01AB1234"
+        ]
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "suspect_ramesh_kumar",
+      "target": "crime_fir_2024_cr0142",
+      "type": "OPERATES",
+      "metadata": {
+        "timestamp": "2024-03-15T00:00:00+00:00",
+        "evidence_source": "FIR-2024-CR0142"
+      }
+    },
+    {
+      "source": "suspect_rakesh",
+      "target": "crime_fir_2024_cr0142",
+      "type": "OPERATES",
+      "metadata": {
+        "timestamp": "2024-03-15T00:00:00+00:00",
+        "evidence_source": "FIR-2024-CR0142"
+      }
+    },
+    {
+      "source": "suspect_ramesh_kumar",
+      "target": "suspect_rakesh",
+      "type": "CO_ACCUSED_IN",
+      "metadata": {
+        "timestamp": "2024-03-15T00:00:00+00:00",
+        "evidence_source": "FIR-2024-CR0142",
+        "fir_no": "FIR-2024-CR0142"
+      }
+    },
+    {
+      "source": "suspect_ramesh_kumar",
+      "target": "phone_9876543210",
+      "type": "USES",
+      "metadata": {
+        "timestamp": "2024-03-15T00:00:00+00:00",
+        "evidence_source": "FIR-2024-CR0142"
+      }
+    },
+    {
+      "source": "suspect_rakesh",
+      "target": "phone_9876543210",
+      "type": "USES",
+      "metadata": {
+        "timestamp": "2024-03-15T00:00:00+00:00",
+        "evidence_source": "FIR-2024-CR0142"
+      }
+    },
+    {
+      "source": "suspect_ramesh_kumar",
+      "target": "account_123456789012",
+      "type": "OPERATES",
+      "metadata": {
+        "timestamp": "2024-03-15T00:00:00+00:00",
+        "evidence_source": "FIR-2024-CR0142",
+        "relation": "operates_account"
+      }
+    },
+    {
+      "source": "suspect_rakesh",
+      "target": "account_123456789012",
+      "type": "OPERATES",
+      "metadata": {
+        "timestamp": "2024-03-15T00:00:00+00:00",
+        "evidence_source": "FIR-2024-CR0142",
+        "relation": "operates_account"
+      }
+    },
+    {
+      "source": "suspect_sunil_kumar",
+      "target": "crime_fir_2025_cr0999",
+      "type": "OPERATES",
+      "metadata": {
+        "timestamp": "2025-01-20T00:00:00+00:00",
+        "evidence_source": "FIR-2025-CR0999"
+      }
+    },
+    {
+      "source": "suspect_sunil_kumar",
+      "target": "phone_9876512345",
+      "type": "USES",
+      "metadata": {
+        "timestamp": "2025-01-20T00:00:00+00:00",
+        "evidence_source": "FIR-2025-CR0999"
+      }
+    },
+    {
+      "source": "suspect_sunil_kumar",
+      "target": "phone_9876543210",
+      "type": "USES",
+      "metadata": {
+        "timestamp": "2025-01-20T00:00:00+00:00",
+        "evidence_source": "FIR-2025-CR0999"
+      }
+    },
+    {
+      "source": "suspect_sunil_kumar",
+      "target": "account_987654321098765432",
+      "type": "OPERATES",
+      "metadata": {
+        "timestamp": "2025-01-20T00:00:00+00:00",
+        "evidence_source": "FIR-2025-CR0999",
+        "relation": "operates_account"
+      }
+    },
+    {
+      "source": "phone_9876543210",
+      "target": "phone_9123456789",
+      "type": "CALLED",
+      "metadata": {
+        "timestamp": "2024-03-16T10:00:00+00:00",
+        "duration": 120,
+        "evidence_source": "CDR Log",
+        "imei": "123456789012345",
+        "tower_id": "TOWER_A"
+      }
+    },
+    {
+      "source": "phone_9123456789",
+      "target": "phone_9876543210",
+      "type": "CALLED",
+      "metadata": {
+        "timestamp": "2024-03-16T10:05:00+00:00",
+        "duration": 60,
+        "evidence_source": "CDR Log",
+        "imei": "123456789012346",
+        "tower_id": "TOWER_B"
+      }
+    },
+    {
+      "source": "phone_9876512345",
+      "target": "phone_9876543210",
+      "type": "CALLED",
+      "metadata": {
+        "timestamp": "2024-03-17T12:30:00+00:00",
+        "duration": 200,
+        "evidence_source": "CDR Log",
+        "imei": "123456789012347",
+        "tower_id": "TOWER_A"
+      }
+    },
+    {
+      "source": "phone_9876543210",
+      "target": "phone_9876512345",
+      "type": "CALLED",
+      "metadata": {
+        "timestamp": "2024-03-18T09:00:00+00:00",
+        "duration": 30,
+        "evidence_source": "CDR Log",
+        "imei": "123456789012345",
+        "tower_id": "TOWER_C"
+      }
+    },
+    {
+      "source": "account_123456789012",
+      "target": "account_987654321098765432",
+      "type": "TRANSFERRED",
+      "metadata": {
+        "timestamp": "2024-03-16T11:00:00+00:00",
+        "amount": 50000.0,
+        "tx_id": "TXN001",
+        "evidence_source": "Bank Txn"
+      }
+    },
+    {
+      "source": "account_987654321098765432",
+      "target": "account_123456789012",
+      "type": "TRANSFERRED",
+      "metadata": {
+        "timestamp": "2024-03-17T12:00:00+00:00",
+        "amount": 25000.0,
+        "tx_id": "TXN002",
+        "evidence_source": "Bank Txn"
+      }
+    }
+  ]
+}
