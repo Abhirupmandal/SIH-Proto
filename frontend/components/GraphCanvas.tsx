@@ -203,11 +203,22 @@ export const SAMPLE_EDGES: GraphEdgeData[] = [
   },
 ];
 
+export interface GraphCanvasProps {
+  nodes?: GraphNodeData[];
+  edges?: GraphEdgeData[];
+  onSelectEdge?: (edge: GraphEdgeData | null) => void;
+  selectedEdge?: GraphEdgeData | null;
+  onSelectNode?: (node: GraphNodeData | null) => void;
+  selectedNode?: GraphNodeData | null;
+}
+
 export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   nodes = SAMPLE_NODES,
   edges = SAMPLE_EDGES,
   onSelectEdge,
   selectedEdge,
+  onSelectNode,
+  selectedNode,
 }) => {
   const [hoveredEdge, setHoveredEdge] = useState<string | null>(null);
 
@@ -216,18 +227,20 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
   nodes.forEach((n) => nodeMap.set(n.id, n));
 
   const getNodeIcon = (type: string) => {
-    switch (type) {
-      case 'SUSPECT':
-        return <ShieldAlert className="w-4 h-4 text-rose-400" />;
-      case 'BANK_ACCOUNT':
-        return <Landmark className="w-4 h-4 text-emerald-400" />;
-      case 'PHONE':
-        return <Phone className="w-4 h-4 text-sky-400" />;
-      case 'FIR':
-        return <FileSpreadsheet className="w-4 h-4 text-amber-400" />;
-      default:
-        return <HelpCircle className="w-4 h-4 text-indigo-400" />;
+    const t = (type || '').toUpperCase();
+    if (t.includes('SUSPECT')) {
+      return <ShieldAlert className="w-4 h-4 text-rose-400" />;
     }
+    if (t.includes('ACCOUNT') || t.includes('BANK')) {
+      return <Landmark className="w-4 h-4 text-emerald-400" />;
+    }
+    if (t.includes('PHONE')) {
+      return <Phone className="w-4 h-4 text-sky-400" />;
+    }
+    if (t.includes('FIR') || t.includes('CRIME') || t.includes('CASE')) {
+      return <FileSpreadsheet className="w-4 h-4 text-amber-400" />;
+    }
+    return <HelpCircle className="w-4 h-4 text-indigo-400" />;
   };
 
   const getEdgeStroke = (edge: GraphEdgeData, isHovered: boolean, isSelected: boolean) => {
@@ -401,17 +414,35 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
 
           {/* Nodes */}
           {nodes.map((node) => {
-            if (node.x === undefined || node.y === undefined) return null;
+            const posX = node.x ?? 480;
+            const posY = node.y ?? 260;
             const isHighRisk = (node.riskScore ?? 0) >= 80;
             const nodeOpacity = node.opacity ?? 1;
+            const isSelectedNode = selectedNode?.id === node.id;
 
             return (
               <g
                 key={node.id}
-                transform={`translate(${node.x}, ${node.y})`}
+                transform={`translate(${posX}, ${posY})`}
                 className="cursor-pointer group transition-opacity duration-300"
                 style={{ opacity: nodeOpacity }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectNode?.(node);
+                }}
               >
+                {/* Highlight ring for selected node */}
+                {isSelectedNode && (
+                  <circle
+                    r="26"
+                    fill="none"
+                    stroke="#38bdf8"
+                    strokeWidth="2.5"
+                    strokeDasharray="4 2"
+                    className="animate-spin"
+                  />
+                )}
+
                 {/* Glow ring for high risk entities (only active when not dimmed) */}
                 {isHighRisk && nodeOpacity >= 0.9 && (
                   <circle
@@ -428,8 +459,8 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
                 <circle
                   r="18"
                   fill="#0f172a"
-                  stroke={isHighRisk ? '#f43f5e' : '#3b82f6'}
-                  strokeWidth="2"
+                  stroke={isSelectedNode ? '#38bdf8' : isHighRisk ? '#f43f5e' : '#3b82f6'}
+                  strokeWidth={isSelectedNode ? 3 : 2}
                   className="transition-transform duration-200 group-hover:scale-110"
                 />
 

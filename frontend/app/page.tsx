@@ -6,7 +6,10 @@ import { GraphEdgeData, GraphNodeData, CytoscapeElement } from '@/types/graph';
 import { EvidenceModal } from '@/components/modals/EvidenceModal';
 import { IngestionModal } from '@/components/modals/IngestionModal';
 import { GraphCanvas, SAMPLE_NODES, SAMPLE_EDGES } from '@/components/GraphCanvas';
+import { ForceGraphCanvas } from '@/components/canvas/ForceGraphCanvas';
 import { TimelineSlider } from '@/components/controls/TimelineSlider';
+import { RiskLeaderboard } from '@/components/intelligence/RiskLeaderboard';
+import { NodeInspector } from '@/components/inspectors/NodeInspector';
 import {
   ShieldAlert,
   Search,
@@ -20,9 +23,12 @@ import {
   CalendarRange,
   UploadCloud,
   FileDown,
+  Loader2,
+  Target,
+  Orbit,
 } from 'lucide-react';
 
-// Dynamic import for React-PDF DossierDownloadButton with SSR disabled to prevent hydration mismatch
+// Dynamic import for React-PDF DossierDownloadButton with SSR disabled
 const DossierDownloadButton = dynamic(
   () => import('@/components/export/DossierPdf').then((mod) => mod.DossierDownloadButton),
   {
@@ -39,19 +45,113 @@ const DossierDownloadButton = dynamic(
   }
 );
 
-const MIN_DATE = '2026-08-10T00:00:00.000Z';
-const MAX_DATE = '2026-08-15T23:59:59.000Z';
-
 export default function Home() {
-  // Graph elements state initialized with baseline forensic dataset
-  const [nodes, setNodes] = useState<GraphNodeData[]>(SAMPLE_NODES);
-  const [edges, setEdges] = useState<GraphEdgeData[]>(SAMPLE_EDGES);
+  // Graph elements state loaded dynamically from /api/graph
+  const [nodes, setNodes] = useState<GraphNodeData[]>([]);
+  const [edges, setEdges] = useState<GraphEdgeData[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const [selectedEdge, setSelectedEdge] = useState<GraphEdgeData | null>(null);
+  const [selectedNode, setSelectedNode] = useState<GraphNodeData | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentTimestamp, setCurrentTimestamp] = useState<string>(MAX_DATE);
+  const [currentTimestamp, setCurrentTimestamp] = useState<string>('');
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isIngestOpen, setIsIngestOpen] = useState(false);
+  const [canvasMode, setCanvasMode] = useState<'force' | 'static'>('force');
+
+  // Fetch /api/graph on initial load
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchGraphData() {
+      try {
+        setIsLoading(true);
+        const res = await fetch('/api/graph');
+        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+        const json = await res.json();
+
+        if (isMounted && json.elements) {
+          const fetchedNodes: GraphNodeData[] = (json.elements.nodes || []).map(
+            (n: any) => n.data
+          );
+          const fetchedEdges: GraphEdgeData[] = (json.elements.edges || []).map(
+            (e: any) => e.data
+          );
+
+          setNodes(fetchedNodes);
+          setEdges(fetchedEdges);
+
+          // Calculate initial max timestamp
+          const allTimes = fetchedEdges
+            .map((e) => new Date(e.timestamp || '').getTime())
+            .filter((t) => !isNaN(t));
+
+          if (allTimes.length > 0) {
+            const maxT = Math.max(...allTimes);
+            setCurrentTimestamp(new Date(maxT).toISOString());
+          }
+        }
+      } catch (err) {
+        console.error('Failed to fetch /api/graph, loading fallback sample dataset:', err);
+        if (isMounted) {
+          setNodes(SAMPLE_NODES);
+          setEdges(SAMPLE_EDGES);
+          setCurrentTimestamp('2026-08-15T23:59:59.000Z');
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    fetchGraphData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Compute dynamic minDate and maxDate from all edge timestamps
+  const { minDate, maxDate } = useMemo(() => {
+    const timestamps: number[] = [];
+
+    edges.forEach((edge) => {
+      if (edge.timestamp) {
+        const t = new Date(edge.timestamp).getTime();
+        if (!isNaN(t)) timestamps.push(t);
+      }
+    });
+
+    nodes.forEach((node) => {
+      if (node.createdAt) {
+        const t = new Date(node.createdAt).getTime();
+        if (!isNaN(t)) timestamps.push(t);
+      }
+    });
+
+    if (timestamps.length === 0) {
+      return {
+        minDate: '2024-03-15T00:00:00.000Z',
+        maxDate: '2025-01-25T23:59:59.000Z',
+      };
+    }
+
+    const min = Math.min(...timestamps);
+    const max = Math.max(...timestamps);
+
+    return {
+      minDate: new Date(min).toISOString(),
+      maxDate: new Date(max).toISOString(),
+    };
+  }, [edges, nodes]);
+
+  // Set default currentTimestamp once min/max are ready
+  useEffect(() => {
+    if (!currentTimestamp && maxDate) {
+      setCurrentTimestamp(maxDate);
+    }
+  }, [maxDate, currentTimestamp]);
 
   // Auto-increment playback timer every 800ms
   useEffect(() => {
@@ -59,36 +159,67 @@ export default function Home() {
 
     const interval = setInterval(() => {
       setCurrentTimestamp((prev) => {
-        const prevTime = new Date(prev).getTime();
-        const maxTime = new Date(MAX_DATE).getTime();
-        // Step forward by 8 hours per tick (800ms)
-        const nextTime = prevTime + 8 * 60 * 60 * 1000;
+        const prevTime = new Date(prev || minDate).getTime();
+        const maxTime = new Date(maxDate).getTime();
+        const minTime = new Date(minDate).getTime();
+
+        // Dynamically scale step increment to cover ~30 steps
+        const stepMs = Math.max(
+          3600000,
+          Math.round((maxTime - minTime) / 30)
+        );
+        const nextTime = prevTime + stepMs;
 
         if (nextTime >= maxTime) {
           setIsPlaying(false);
-          return MAX_DATE;
+          return maxDate;
         }
         return new Date(nextTime).toISOString();
       });
     }, 800);
 
     return () => clearInterval(interval);
-  }, [isPlaying]);
+  }, [isPlaying, minDate, maxDate]);
 
   const handleTogglePlay = () => {
-    if (!isPlaying && new Date(currentTimestamp).getTime() >= new Date(MAX_DATE).getTime()) {
-      setCurrentTimestamp(MIN_DATE);
+    if (!isPlaying && new Date(currentTimestamp || maxDate).getTime() >= new Date(maxDate).getTime()) {
+      setCurrentTimestamp(minDate);
     }
     setIsPlaying((prev) => !prev);
   };
 
-  const currentDateVal = useMemo(() => new Date(currentTimestamp).getTime(), [currentTimestamp]);
+  const currentDateVal = useMemo(() => {
+    if (!currentTimestamp) return Infinity;
+    const t = new Date(currentTimestamp).getTime();
+    return isNaN(t) ? Infinity : t;
+  }, [currentTimestamp]);
+
+  // Search filter
+  const searchedNodeIds = useMemo(() => {
+    if (!searchQuery.trim()) return null;
+    const q = searchQuery.toLowerCase().trim();
+    const set = new Set<string>();
+    nodes.forEach((n) => {
+      const labelMatch = n.label.toLowerCase().includes(q);
+      const idMatch = n.id.toLowerCase().includes(q);
+      const roleMatch = (n.role || '').toLowerCase().includes(q);
+      const aliasMatch = ((n.metadata?.aliases as string[]) || []).some((a) =>
+        a.toLowerCase().includes(q)
+      );
+      if (labelMatch || idMatch || roleMatch || aliasMatch) {
+        set.add(n.id);
+      }
+    });
+    return set;
+  }, [nodes, searchQuery]);
 
   // Filter edges: hide edges with timestamps > currentTimestamp
   const filteredEdges = useMemo(() => {
     return edges.filter((edge) => {
       if (!edge.timestamp) return true;
-      return new Date(edge.timestamp).getTime() <= currentDateVal;
+      const t = new Date(edge.timestamp).getTime();
+      if (isNaN(t)) return true;
+      return t <= currentDateVal;
     });
   }, [edges, currentDateVal]);
 
@@ -105,20 +236,28 @@ export default function Home() {
   // Filter nodes: nodes with no active edges at that timestamp render with reduced opacity (0.25)
   const filteredNodes = useMemo(() => {
     return nodes.map((node) => {
-      const isCreated = !node.createdAt || new Date(node.createdAt).getTime() <= currentDateVal;
+      const isCreated =
+        !node.createdAt || new Date(node.createdAt).getTime() <= currentDateVal;
       const hasActiveEdge = activeNodeIds.has(node.id);
-      const opacity = hasActiveEdge ? 1 : isCreated ? 0.25 : 0.15;
+      const matchesSearch = searchedNodeIds === null || searchedNodeIds.has(node.id);
+
+      let opacity = hasActiveEdge ? 1 : isCreated ? 0.25 : 0.15;
+      if (searchedNodeIds !== null && !matchesSearch) {
+        opacity = 0.1;
+      }
+
       return {
         ...node,
         opacity,
       };
     });
-  }, [nodes, activeNodeIds, currentDateVal]);
+  }, [nodes, activeNodeIds, currentDateVal, searchedNodeIds]);
 
   // Auto-deselect edge if it gets scrubbed out of temporal window
   useEffect(() => {
     if (selectedEdge && selectedEdge.timestamp) {
-      if (new Date(selectedEdge.timestamp).getTime() > currentDateVal) {
+      const t = new Date(selectedEdge.timestamp).getTime();
+      if (!isNaN(t) && t > currentDateVal) {
         setSelectedEdge(null);
       }
     }
@@ -138,14 +277,12 @@ export default function Home() {
       }
     });
 
-    // Append new nodes ensuring no duplicate node IDs exist
     setNodes((prevNodes) => {
       const existingIds = new Set(prevNodes.map((n) => n.id));
       const uniqueNewNodes = newNodes.filter((n) => !existingIds.has(n.id));
       return [...prevNodes, ...uniqueNewNodes];
     });
 
-    // Append new edges ensuring no duplicate edge IDs exist
     setEdges((prevEdges) => {
       const existingIds = new Set(prevEdges.map((e) => e.id));
       const uniqueNewEdges = newEdges.filter((e) => !existingIds.has(e.id));
@@ -154,6 +291,14 @@ export default function Home() {
 
     setIsIngestOpen(false);
   };
+
+  // Connected edges for the currently inspected node
+  const connectedEdgesForSelectedNode = useMemo(() => {
+    if (!selectedNode) return [];
+    return filteredEdges.filter(
+      (e) => e.source === selectedNode.id || e.target === selectedNode.id
+    );
+  }, [selectedNode, filteredEdges]);
 
   // Dynamic metrics calculated based on temporal window
   const activeTracedSum = useMemo(() => {
@@ -184,7 +329,7 @@ export default function Home() {
                 </span>
                 <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  Forensic Core Active
+                  Live Core Connected
                 </span>
               </div>
               <h1 className="text-xl font-bold tracking-tight text-white mt-0.5">
@@ -193,7 +338,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
@@ -201,7 +346,7 @@ export default function Home() {
                 placeholder="Search suspect, FIR, phone, bank A/C..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-56 pl-9 pr-4 py-1.5 text-xs bg-slate-950/80 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
+                className="w-52 pl-9 pr-4 py-1.5 text-xs bg-slate-950/80 border border-slate-800 rounded-lg text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors"
               />
             </div>
 
@@ -218,15 +363,15 @@ export default function Home() {
 
             {/* Export Dossier (PDF) Action Button */}
             <DossierDownloadButton
-              caseId="#KSP-CYBER-2024-88"
-              jurisdiction="Crime Branch Unit 4 / Cyber Cell Central"
+              caseId="FIR-2024-CR0142"
+              jurisdiction="Andheri / Cyber Cell Central"
               nodes={filteredNodes}
               edges={filteredEdges}
             />
 
-            <div className="hidden lg:flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/60 text-slate-300">
+            <div className="hidden xl:flex items-center gap-2 text-xs font-mono px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/60 text-slate-300">
               <Fingerprint className="w-3.5 h-3.5 text-indigo-400" />
-              <span>CASE: #KSP-CYBER-2024-88</span>
+              <span>CASE: #FIR-2024-CR0142</span>
             </div>
           </div>
         </div>
@@ -234,92 +379,180 @@ export default function Home() {
 
       {/* Main Content Area */}
       <div className="max-w-7xl w-full mx-auto p-6 space-y-6 flex-1 flex flex-col">
-        {/* Intelligence Statistics Banner (Dynamic by Ingestion & Temporal Window) */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-400 font-medium">Active Suspects</span>
-              <Layers className="w-4 h-4 text-indigo-400" />
+        {/* Loading Spinner State */}
+        {isLoading ? (
+          <div className="flex-1 flex flex-col items-center justify-center min-h-[480px] p-12 bg-slate-900/40 border border-slate-800/60 rounded-2xl">
+            <div className="relative flex items-center justify-center mb-4">
+              <div className="w-14 h-14 rounded-full border-4 border-slate-800 border-t-indigo-500 animate-spin" />
+              <ShieldAlert className="w-6 h-6 text-indigo-400 absolute animate-pulse" />
             </div>
-            <div className="text-2xl font-bold text-white font-mono mt-2">
-              {filteredNodes.filter((n) => (n.opacity ?? 1) > 0.5).length} / {nodes.length}
+            <div className="text-sm font-semibold text-slate-200">
+              Loading Forensic Neural Graph & Entities...
             </div>
-            <div className="text-[11px] text-indigo-400 mt-1">Grounded at scrub window</div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-400 font-medium">Active Intercepts</span>
-              <PhoneForwarded className="w-4 h-4 text-sky-400" />
-            </div>
-            <div className="text-2xl font-bold text-white font-mono mt-2">
-              {filteredEdges.length} / {edges.length}
-            </div>
-            <div className="text-[11px] text-sky-400 mt-1">Chronological links revealed</div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-400 font-medium">Cumulative Illicit Flow</span>
-              <IndianRupee className="w-4 h-4 text-emerald-400" />
-            </div>
-            <div className="text-2xl font-bold text-emerald-400 font-mono mt-2">
-              {formatINR(activeTracedSum)}
-            </div>
-            <div className="text-[11px] text-emerald-400/90 mt-1">Laundered up to current time</div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-400 font-medium">Temporal Window</span>
-              <CalendarRange className="w-4 h-4 text-amber-400" />
-            </div>
-            <div className="text-2xl font-bold text-amber-400 font-mono mt-2">
-              {new Date(currentTimestamp).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
-            </div>
-            <div className="text-[11px] text-amber-400/90 mt-1">
-              {isPlaying ? 'Auto-stepping playback' : 'Interactive scrub active'}
+            <div className="text-xs text-slate-500 mt-1 font-mono">
+              Parsing verified CCTNS clean_graph.json intelligence...
             </div>
           </div>
-        </div>
+        ) : (
+          <>
+            {/* Intelligence Statistics Banner (Dynamic by clean_graph.json & Temporal Window) */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-400 font-medium">Active Entities</span>
+                  <Layers className="w-4 h-4 text-indigo-400" />
+                </div>
+                <div className="text-2xl font-bold text-white font-mono mt-2">
+                  {filteredNodes.filter((n) => (n.opacity ?? 1) > 0.5).length} / {nodes.length}
+                </div>
+                <div className="text-[11px] text-indigo-400 mt-1">Grounded in scrub window</div>
+              </div>
 
-        {/* Network Graph Canvas Section */}
-        <section className="space-y-3 flex-1 flex flex-col">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-indigo-400" />
-              <h2 className="text-sm font-semibold tracking-wide uppercase text-slate-200">
-                Temporal Evolution of Criminal Syndicate Network
-              </h2>
-            </div>
-            <div className="text-xs text-slate-400 flex items-center gap-2">
-              <FileCheck2 className="w-4 h-4 text-emerald-400" />
-              <span>Click connection edges to inspect Explainable AI (XAI) evidence trail</span>
-            </div>
-          </div>
+              <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-400 font-medium">Active Intercepts</span>
+                  <PhoneForwarded className="w-4 h-4 text-sky-400" />
+                </div>
+                <div className="text-2xl font-bold text-white font-mono mt-2">
+                  {filteredEdges.length} / {edges.length}
+                </div>
+                <div className="text-[11px] text-sky-400 mt-1">Grounded CDR & ledger links</div>
+              </div>
 
-          {/* Interactive Graph Canvas with Dynamic Elements */}
-          <div className="flex-1 flex flex-col space-y-3">
-            <GraphCanvas
-              nodes={filteredNodes}
-              edges={filteredEdges}
-              onSelectEdge={setSelectedEdge}
-              selectedEdge={selectedEdge}
-            />
+              <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-400 font-medium">Cumulative Illicit Flow</span>
+                  <IndianRupee className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div className="text-2xl font-bold text-emerald-400 font-mono mt-2">
+                  {formatINR(activeTracedSum)}
+                </div>
+                <div className="text-[11px] text-emerald-400/90 mt-1">Laundered up to scrub time</div>
+              </div>
 
-            {/* Docked Temporal Playback Slider anchored along the bottom center */}
-            <div className="w-full flex justify-center">
-              <TimelineSlider
-                minDate={MIN_DATE}
-                maxDate={MAX_DATE}
-                currentDate={currentTimestamp}
-                onChange={setCurrentTimestamp}
-                isPlaying={isPlaying}
-                onTogglePlay={handleTogglePlay}
-              />
+              <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-400 font-medium">Temporal Window</span>
+                  <CalendarRange className="w-4 h-4 text-amber-400" />
+                </div>
+                <div className="text-2xl font-bold text-amber-400 font-mono mt-2">
+                  {currentTimestamp
+                    ? new Date(currentTimestamp).toLocaleDateString('en-US', {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                      })
+                    : 'All Active'}
+                </div>
+                <div className="text-[11px] text-amber-400/90 mt-1">
+                  {isPlaying ? 'Auto-stepping timeline' : 'Interactive scrub active'}
+                </div>
+              </div>
             </div>
-          </div>
-        </section>
+
+            {/* Main Network Graph & Intelligence Layout */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 items-start">
+              {/* Center Canvas & Temporal Playback: 8 or 9 columns */}
+              <div className="lg:col-span-8 xl:col-span-9 flex flex-col space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-indigo-400" />
+                    <h2 className="text-sm font-semibold tracking-wide uppercase text-slate-200">
+                      CCTNS Verified Criminal Syndicate Graph
+                    </h2>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {/* Canvas Mode Toggle */}
+                    <div className="flex items-center gap-1 p-0.5 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+                      <button
+                        type="button"
+                        onClick={() => setCanvasMode('force')}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-all font-medium ${
+                          canvasMode === 'force'
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <Orbit className="w-3.5 h-3.5" />
+                        <span>Force 2D Physics</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCanvasMode('static')}
+                        className={`flex items-center gap-1.5 px-3 py-1 rounded-md transition-all font-medium ${
+                          canvasMode === 'static'
+                            ? 'bg-indigo-600 text-white shadow-sm'
+                            : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        <Layers className="w-3.5 h-3.5" />
+                        <span>Static Grid</span>
+                      </button>
+                    </div>
+
+                    <div className="text-xs text-slate-400 hidden xl:flex items-center gap-2">
+                      <FileCheck2 className="w-4 h-4 text-emerald-400" />
+                      <span>Click edges for XAI evidence; drag nodes to simulate physics</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Interactive Graph Canvas (Force 2D Physics or Static Layout) */}
+                {canvasMode === 'force' ? (
+                  <ForceGraphCanvas
+                    nodes={filteredNodes}
+                    edges={filteredEdges}
+                    onSelectNode={setSelectedNode}
+                    onSelectEdge={setSelectedEdge}
+                    selectedNodeId={selectedNode?.id}
+                    selectedEdgeId={selectedEdge?.id}
+                  />
+                ) : (
+                  <GraphCanvas
+                    nodes={filteredNodes}
+                    edges={filteredEdges}
+                    onSelectEdge={setSelectedEdge}
+                    selectedEdge={selectedEdge}
+                    onSelectNode={setSelectedNode}
+                    selectedNode={selectedNode}
+                  />
+                )}
+
+                {/* Docked Temporal Playback Slider */}
+                <div className="w-full flex justify-center">
+                  <TimelineSlider
+                    minDate={minDate}
+                    maxDate={maxDate}
+                    currentDate={currentTimestamp || maxDate}
+                    onChange={setCurrentTimestamp}
+                    isPlaying={isPlaying}
+                    onTogglePlay={handleTogglePlay}
+                  />
+                </div>
+              </div>
+
+              {/* Right Side Intelligence Panel: Risk Leaderboard & Node Inspector */}
+              <div className="lg:col-span-4 xl:col-span-3 space-y-4">
+                {/* Node Inspector (when an entity is clicked) */}
+                {selectedNode && (
+                  <NodeInspector
+                    selectedNode={selectedNode}
+                    onClose={() => setSelectedNode(null)}
+                    connectedEdges={connectedEdgesForSelectedNode}
+                    onSelectEdge={setSelectedEdge}
+                  />
+                )}
+
+                {/* Priority Risk Leaderboard */}
+                <RiskLeaderboard
+                  nodes={filteredNodes}
+                  selectedNodeId={selectedNode?.id}
+                  onSelectNode={setSelectedNode}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Dynamic Record Ingestion Modal */}
