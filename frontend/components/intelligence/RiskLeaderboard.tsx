@@ -82,8 +82,13 @@ export const RiskLeaderboard: React.FC<RiskLeaderboardProps> = ({
                       </span>
                     )}
                   </div>
-                  <div className="text-[10px] text-slate-400 truncate">
-                    {node.role || 'Syndicate Member'}
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 truncate">
+                    <span>{node.role || 'Syndicate Member'}</span>
+                    {node.communityId !== undefined && (
+                      <span className="px-1.5 py-0.2 rounded bg-indigo-950/60 text-indigo-400 border border-indigo-800/60 font-mono text-[9px]">
+                        Comm #{node.communityId}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -94,7 +99,7 @@ export const RiskLeaderboard: React.FC<RiskLeaderboardProps> = ({
                     {node.riskScore ? `${node.riskScore}` : '90'}
                   </div>
                   <div className="text-[9px] text-slate-500 uppercase font-mono">
-                    THREAT
+                    {node.betweenness !== undefined ? `BC ${(node.betweenness).toFixed(2)}` : 'THREAT'}
                   </div>
                 </div>
                 <ChevronRight className="w-3.5 h-3.5 text-slate-500" />

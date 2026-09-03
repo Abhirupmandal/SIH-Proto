@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.analytics import router as analytics_router
 from app.api.dossier import router as dossier_router
@@ -21,6 +22,13 @@ from app.services.graph_store import engine, ensure_sample_loaded
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Graph Intelligence API")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
     ensure_sample_loaded()
     app.include_router(health_router)
     app.include_router(graph_router)

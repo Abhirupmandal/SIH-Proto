@@ -16,17 +16,23 @@ engine = GraphEngine()
 
 
 def ensure_sample_loaded() -> bool:
-    """Load Stage 4 fixture if the engine is empty. Returns True if loaded."""
+    """Load initial dataset if the engine is empty. Returns True if loaded."""
     if engine.get_graph().number_of_nodes():
         return False
-    candidate = (
-        Path(__file__).resolve().parents[2] / "tests" / "fixtures" / "sample_graph.json"
-    )
-    if not candidate.exists():
-        return False
-    payload = GraphPayload.model_validate(json.loads(candidate.read_text()))
-    engine.load_graph(payload)
-    return True
+    candidates = [
+        Path(__file__).resolve().parents[3] / "data" / "clean_graph.json",
+        Path(__file__).resolve().parents[3] / "data" / "sample_graph.json",
+        Path(__file__).resolve().parents[2] / "data" / "clean_graph.json",
+        Path(__file__).resolve().parents[2] / "data" / "sample_graph.json",
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            payload = GraphPayload.model_validate(
+                json.loads(candidate.read_text(encoding="utf-8"))
+            )
+            engine.load_graph(payload)
+            return True
+    return False
 
 
 def get_engine() -> GraphEngine:

@@ -10,6 +10,7 @@ import { ForceGraphCanvas } from '@/components/canvas/ForceGraphCanvas';
 import { TimelineSlider } from '@/components/controls/TimelineSlider';
 import { RiskLeaderboard } from '@/components/intelligence/RiskLeaderboard';
 import { NodeInspector } from '@/components/inspectors/NodeInspector';
+import { getGraphData, BACKEND_BASE_URL } from '@/lib/api';
 import {
   ShieldAlert,
   Search,
@@ -50,6 +51,7 @@ export default function Home() {
   const [nodes, setNodes] = useState<GraphNodeData[]>([]);
   const [edges, setEdges] = useState<GraphEdgeData[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLiveBackend, setIsLiveBackend] = useState<boolean>(false);
 
   const [selectedEdge, setSelectedEdge] = useState<GraphEdgeData | null>(null);
   const [selectedNode, setSelectedNode] = useState<GraphNodeData | null>(null);
@@ -59,40 +61,36 @@ export default function Home() {
   const [isIngestOpen, setIsIngestOpen] = useState(false);
   const [canvasMode, setCanvasMode] = useState<'force' | 'static'>('force');
 
-  // Fetch /api/graph on initial load
+  // Fetch graph data on initial load via getGraphData()
   useEffect(() => {
     let isMounted = true;
 
     async function fetchGraphData() {
       try {
         setIsLoading(true);
-        const res = await fetch('/api/graph');
-        if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-        const json = await res.json();
+        const res = await getGraphData();
 
-        if (isMounted && json.elements) {
-          const fetchedNodes: GraphNodeData[] = (json.elements.nodes || []).map(
-            (n: any) => n.data
-          );
-          const fetchedEdges: GraphEdgeData[] = (json.elements.edges || []).map(
-            (e: any) => e.data
-          );
+        if (isMounted) {
+          setNodes(res.nodes);
+          setEdges(res.edges);
+          setIsLiveBackend(res.isLiveBackend);
 
-          setNodes(fetchedNodes);
-          setEdges(fetchedEdges);
+          // Calculate initial scrubber timestamp from timeRange or edges
+          if (res.timeRange?.latest) {
+            setCurrentTimestamp(new Date(res.timeRange.latest).toISOString());
+          } else {
+            const allTimes = res.edges
+              .map((e) => new Date(e.timestamp || '').getTime())
+              .filter((t) => !isNaN(t));
 
-          // Calculate initial max timestamp
-          const allTimes = fetchedEdges
-            .map((e) => new Date(e.timestamp || '').getTime())
-            .filter((t) => !isNaN(t));
-
-          if (allTimes.length > 0) {
-            const maxT = Math.max(...allTimes);
-            setCurrentTimestamp(new Date(maxT).toISOString());
+            if (allTimes.length > 0) {
+              const maxT = Math.max(...allTimes);
+              setCurrentTimestamp(new Date(maxT).toISOString());
+            }
           }
         }
       } catch (err) {
-        console.error('Failed to fetch /api/graph, loading fallback sample dataset:', err);
+        console.error('Failed to fetch graph data, loading fallback sample dataset:', err);
         if (isMounted) {
           setNodes(SAMPLE_NODES);
           setEdges(SAMPLE_EDGES);
@@ -263,8 +261,21 @@ export default function Home() {
     }
   }, [selectedEdge, currentDateVal]);
 
-  // Append new elements from Ingestion modal without duplicate node IDs
-  const handleIngestSuccess = (newElements: CytoscapeElement[]) => {
+  // Append new elements or reload from getGraphData()
+  const handleIngestSuccess = async (newElements: CytoscapeElement[]) => {
+    try {
+      const refreshed = await getGraphData();
+      if (refreshed.nodes.length > 0 && refreshed.isLiveBackend) {
+        setNodes(refreshed.nodes);
+        setEdges(refreshed.edges);
+        setIsLiveBackend(true);
+        setIsIngestOpen(false);
+        return;
+      }
+    } catch {
+      // fallback to local merge
+    }
+
     const newNodes: GraphNodeData[] = [];
     const newEdges: GraphEdgeData[] = [];
 
@@ -328,8 +339,12 @@ export default function Home() {
                   PS ID: SIH26189 • Team AKATSUKI
                 </span>
                 <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                  Live Core Connected
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      isLiveBackend ? 'bg-emerald-400 animate-ping' : 'bg-sky-400'
+                    }`}
+                  />
+                  {isLiveBackend ? 'FastAPI Live Core (:8000)' : 'CCTNS Grounded Core'}
                 </span>
               </div>
               <h1 className="text-xl font-bold tracking-tight text-white mt-0.5">

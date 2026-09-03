@@ -21,6 +21,9 @@ export interface GraphNodeData {
   type: NodeType;
   riskScore?: number;
   role?: string;
+  betweenness?: number;
+  pagerank?: number;
+  communityId?: number;
   metadata?: Record<string, unknown>;
   createdAt?: string;
   opacity?: number;

@@ -17,6 +17,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { CytoscapeElement, GraphNodeData, GraphEdgeData } from '@/types/graph';
+import { postIngestData } from '@/lib/api';
 
 interface IngestionModalProps {
   isOpen: boolean;
@@ -389,59 +390,34 @@ export const IngestionModal: React.FC<IngestionModalProps> = ({
     setIsLoading(true);
     setFeedbackMsg(null);
 
-    const payload = {
-      tab: activeTab,
-      jurisdiction,
-      caseRefId,
-      data:
-        activeTab === 'FIR'
-          ? firText
-          : activeTab === 'CDR'
-          ? cdrFileContent
-          : ledgerFileContent,
-    };
-
-    let ingestedElements: CytoscapeElement[] = [];
+    // 1. Parse local entities via NLP and structure parser
+    const localElements = parseLocally();
 
     try {
-      // 1. Attempt POST to backend with timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      // 2. Transmit to Member 2's FastAPI Ingestion Endpoint
+      const ingestRes = await postIngestData(localElements);
 
-      const response = await fetch('http://localhost:8000/api/ingest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        const json = await response.json();
-        if (json.elements && Array.isArray(json.elements)) {
-          ingestedElements = json.elements;
-          setFeedbackMsg({
-            type: 'success',
-            text: `Backend Ingestion Succeeded: ${ingestedElements.length} elements received.`,
-          });
-        }
+      if (ingestRes.success && ingestRes.isLiveBackend) {
+        setFeedbackMsg({
+          type: 'success',
+          text: `Live FastAPI Ingestion Succeeded: Correlated ${localElements.length} elements with GraphEngine.`,
+        });
+      } else {
+        setFeedbackMsg({
+          type: 'info',
+          text: `Offline NLP Correlator: Extracted and correlated ${localElements.length} forensic graph entities.`,
+        });
       }
     } catch (err) {
-      // 2. Offline / Standalone Fallback Parsing
-      console.info('Backend unreachable, executing local NLP and forensic entity parser:', err);
-    }
-
-    // If backend was offline or returned empty, use the robust local forensic parser
-    if (ingestedElements.length === 0) {
-      ingestedElements = parseLocally();
+      console.info('Backend ingestion notice:', err);
       setFeedbackMsg({
         type: 'info',
-        text: `Offline NLP & Structured Parsing: Extracted and correlated ${ingestedElements.length} forensic graph entities.`,
+        text: `Offline NLP Correlator: Extracted and correlated ${localElements.length} forensic graph entities.`,
       });
     }
 
     setTimeout(() => {
-      onIngestSuccess(ingestedElements);
+      onIngestSuccess(localElements);
       setIsLoading(false);
       onClose();
     }, 600);

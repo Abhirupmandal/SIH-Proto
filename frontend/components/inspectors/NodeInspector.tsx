@@ -69,6 +69,11 @@ export const NodeInspector: React.FC<NodeInspectorProps> = ({
                 Risk {selectedNode.riskScore}
               </span>
             )}
+            {selectedNode.betweenness !== undefined && selectedNode.betweenness > 0.5 && (
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-red-500/20 text-red-300 border border-red-500/40 font-bold">
+                Tier 1: Broker
+              </span>
+            )}
           </div>
           <h3 className="text-sm font-bold text-slate-100">{selectedNode.label}</h3>
           <p className="text-xs text-slate-400">{selectedNode.role || 'Grounded Entity'}</p>
@@ -82,6 +87,38 @@ export const NodeInspector: React.FC<NodeInspectorProps> = ({
           <X className="w-4 h-4" />
         </button>
       </div>
+
+      {/* Live Graph Analytics Metrics (FastAPI / NetworkX) */}
+      {(selectedNode.betweenness !== undefined ||
+        selectedNode.pagerank !== undefined ||
+        selectedNode.communityId !== undefined) && (
+        <div className="grid grid-cols-3 gap-2 p-2.5 rounded-lg bg-slate-950/80 border border-indigo-900/40 text-center font-mono">
+          <div className="p-1.5 rounded bg-slate-900/60 border border-slate-800">
+            <div className="text-[9px] text-slate-400 uppercase">Betweenness</div>
+            <div className="text-xs font-bold text-indigo-400">
+              {selectedNode.betweenness !== undefined
+                ? selectedNode.betweenness.toFixed(3)
+                : 'N/A'}
+            </div>
+          </div>
+          <div className="p-1.5 rounded bg-slate-900/60 border border-slate-800">
+            <div className="text-[9px] text-slate-400 uppercase">PageRank</div>
+            <div className="text-xs font-bold text-sky-400">
+              {selectedNode.pagerank !== undefined
+                ? selectedNode.pagerank.toFixed(3)
+                : 'N/A'}
+            </div>
+          </div>
+          <div className="p-1.5 rounded bg-slate-900/60 border border-slate-800">
+            <div className="text-[9px] text-slate-400 uppercase">Community</div>
+            <div className="text-xs font-bold text-emerald-400">
+              {selectedNode.communityId !== undefined
+                ? `Comm #${selectedNode.communityId}`
+                : 'Core'}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Structured Forensic Metadata */}
       <div className="space-y-2 text-xs">
