@@ -22,6 +22,8 @@ export interface GraphNodeData {
   riskScore?: number;
   role?: string;
   metadata?: Record<string, unknown>;
+  createdAt?: string;
+  opacity?: number;
   x?: number;
   y?: number;
 }

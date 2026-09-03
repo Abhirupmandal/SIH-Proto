@@ -14,19 +14,22 @@ import {
   Info,
 } from 'lucide-react';
 
-interface GraphCanvasProps {
+export interface GraphCanvasProps {
+  nodes?: GraphNodeData[];
+  edges?: GraphEdgeData[];
   onSelectEdge?: (edge: GraphEdgeData | null) => void;
   selectedEdge?: GraphEdgeData | null;
 }
 
-// Forensic sample dataset for PS ID: SIH26189
-const SAMPLE_NODES: GraphNodeData[] = [
+// Forensic sample dataset for PS ID: SIH26189 spanning Aug 10, 2026 to Aug 15, 2026
+export const SAMPLE_NODES: GraphNodeData[] = [
   {
     id: 'node-1',
     label: 'Vikram Rao (Prime Suspect)',
     type: 'SUSPECT',
     riskScore: 94,
     role: 'Syndicate Kingpin',
+    createdAt: '2026-08-10T08:00:00.000Z',
     x: 220,
     y: 180,
   },
@@ -36,6 +39,7 @@ const SAMPLE_NODES: GraphNodeData[] = [
     type: 'SUSPECT',
     riskScore: 88,
     role: 'Hawala Courier',
+    createdAt: '2026-08-12T12:00:00.000Z',
     x: 480,
     y: 130,
   },
@@ -45,6 +49,7 @@ const SAMPLE_NODES: GraphNodeData[] = [
     type: 'BANK_ACCOUNT',
     riskScore: 76,
     role: 'Laundering Node',
+    createdAt: '2026-08-14T18:00:00.000Z',
     x: 720,
     y: 220,
   },
@@ -54,6 +59,7 @@ const SAMPLE_NODES: GraphNodeData[] = [
     type: 'PHONE',
     riskScore: 82,
     role: 'Disposable Comms',
+    createdAt: '2026-08-11T12:00:00.000Z',
     x: 230,
     y: 380,
   },
@@ -63,6 +69,7 @@ const SAMPLE_NODES: GraphNodeData[] = [
     type: 'FIR',
     riskScore: 90,
     role: 'Organized Cyber Extortion',
+    createdAt: '2026-08-12T17:00:00.000Z',
     x: 520,
     y: 390,
   },
@@ -72,12 +79,33 @@ const SAMPLE_NODES: GraphNodeData[] = [
     type: 'ORGANIZATION',
     riskScore: 71,
     role: 'Shell Corporation',
+    createdAt: '2026-08-10T09:30:00.000Z',
     x: 730,
     y: 390,
   },
 ];
 
-const SAMPLE_EDGES: GraphEdgeData[] = [
+export const SAMPLE_EDGES: GraphEdgeData[] = [
+  {
+    id: 'edge-6',
+    source: 'node-1',
+    target: 'node-6',
+    sourceLabel: 'Vikram Rao',
+    targetLabel: 'Aura Logistics Pvt Ltd',
+    sourceType: 'SUSPECT',
+    targetType: 'ORGANIZATION',
+    type: 'OPERATES',
+    timestamp: '2026-08-10T10:00:00.000Z',
+    confidenceScore: 0.89,
+    metadata: {
+      corporateRole: 'Beneficial Ultimate Owner (Undisclosed 85% stake)',
+      registrationNo: 'CIN-U72900KA2021PTC148291',
+      incorporationDate: '2021-11-12',
+      registeredAddress: 'Level 4, Orion Complex, Rajajinagar, Bengaluru',
+    },
+    reasoningNote:
+      'MCA company master records and proxy shareholder agreements reveal direct control.',
+  },
   {
     id: 'edge-1',
     source: 'node-1',
@@ -87,7 +115,7 @@ const SAMPLE_EDGES: GraphEdgeData[] = [
     sourceType: 'SUSPECT',
     targetType: 'PHONE',
     type: 'CALLED',
-    timestamp: '2024-08-14 23:14:08 IST',
+    timestamp: '2026-08-11T14:30:00.000Z',
     duration: 342,
     callerImei: '864201049281745',
     cellTowerId: 'TWR-KA-BLR-0412 (Indiranagar)',
@@ -104,6 +132,7 @@ const SAMPLE_EDGES: GraphEdgeData[] = [
     sourceType: 'SUSPECT',
     targetType: 'SUSPECT',
     type: 'CO_ACCUSED_IN',
+    timestamp: '2026-08-12T18:00:00.000Z',
     firNumber: 'FIR #382/2024',
     policeStation: 'Cyber Crime Police Station, Bengaluru Central',
     firExcerpt:
@@ -111,6 +140,22 @@ const SAMPLE_EDGES: GraphEdgeData[] = [
     confidenceScore: 0.95,
     reasoningNote:
       'Direct co-accused relationship established under IPC Sections 420, 120B and IT Act Section 66D.',
+  },
+  {
+    id: 'edge-4',
+    source: 'node-2',
+    target: 'node-5',
+    sourceLabel: 'Farhan Ahmed',
+    targetLabel: 'FIR #382/2024',
+    sourceType: 'SUSPECT',
+    targetType: 'FIR',
+    type: 'CO_ACCUSED_IN',
+    timestamp: '2026-08-13T16:20:00.000Z',
+    firNumber: 'FIR #382/2024',
+    policeStation: 'Cyber Crime Police Station, Bengaluru Central',
+    firExcerpt:
+      'Farhan Ahmed acted as primary cash collector and digital mule account aggregator under instructions from syndicate coordinators.',
+    confidenceScore: 0.92,
   },
   {
     id: 'edge-3',
@@ -121,9 +166,10 @@ const SAMPLE_EDGES: GraphEdgeData[] = [
     sourceType: 'SUSPECT',
     targetType: 'BANK_ACCOUNT',
     type: 'TRANSFERRED',
+    timestamp: '2026-08-14T23:14:00.000Z',
     transactionId: 'UTR-INDB94829104081',
     amount: 2850000,
-    ledgerTimestamp: '2024-08-15 01:22:15 IST',
+    ledgerTimestamp: '2026-08-14T23:14:00.000Z',
     confidenceScore: 0.99,
     metadata: {
       remittanceChannel: 'RTGS Immediate Settle',
@@ -135,21 +181,6 @@ const SAMPLE_EDGES: GraphEdgeData[] = [
       'Layering transaction executed within 2 hours of victim extortion deposit, exceeding standard KYC limits.',
   },
   {
-    id: 'edge-4',
-    source: 'node-2',
-    target: 'node-5',
-    sourceLabel: 'Farhan Ahmed',
-    targetLabel: 'FIR #382/2024',
-    sourceType: 'SUSPECT',
-    targetType: 'FIR',
-    type: 'CO_ACCUSED_IN',
-    firNumber: 'FIR #382/2024',
-    policeStation: 'Cyber Crime Police Station, Bengaluru Central',
-    firExcerpt:
-      'Farhan Ahmed acted as primary cash collector and digital mule account aggregator under instructions from syndicate coordinators.',
-    confidenceScore: 0.92,
-  },
-  {
     id: 'edge-5',
     source: 'node-3',
     target: 'node-6',
@@ -158,9 +189,10 @@ const SAMPLE_EDGES: GraphEdgeData[] = [
     sourceType: 'BANK_ACCOUNT',
     targetType: 'ORGANIZATION',
     type: 'TRANSFERRED',
+    timestamp: '2026-08-15T11:30:00.000Z',
     transactionId: 'UTR-AXIS109823485',
     amount: 1750000,
-    ledgerTimestamp: '2024-08-15 03:45:00 IST',
+    ledgerTimestamp: '2026-08-15T11:30:00.000Z',
     confidenceScore: 0.96,
     metadata: {
       paymentPurpose: 'Fictitious Freight Logistics Invoicing',
@@ -169,28 +201,11 @@ const SAMPLE_EDGES: GraphEdgeData[] = [
     reasoningNote:
       'Integration stage: Fictitious invoicing used to justify illicit funds entering formal economy.',
   },
-  {
-    id: 'edge-6',
-    source: 'node-1',
-    target: 'node-6',
-    sourceLabel: 'Vikram Rao',
-    targetLabel: 'Aura Logistics Pvt Ltd',
-    sourceType: 'SUSPECT',
-    targetType: 'ORGANIZATION',
-    type: 'OPERATES',
-    confidenceScore: 0.89,
-    metadata: {
-      corporateRole: 'Beneficial Ultimate Owner (Undisclosed 85% stake)',
-      registrationNo: 'CIN-U72900KA2021PTC148291',
-      incorporationDate: '2021-11-12',
-      registeredAddress: 'Level 4, Orion Complex, Rajajinagar, Bengaluru',
-    },
-    reasoningNote:
-      'MCA company master records and proxy shareholder agreements reveal direct control.',
-  },
 ];
 
 export const GraphCanvas: React.FC<GraphCanvasProps> = ({
+  nodes = SAMPLE_NODES,
+  edges = SAMPLE_EDGES,
   onSelectEdge,
   selectedEdge,
 }) => {
@@ -198,7 +213,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
 
   // Map nodes by ID for fast lookup
   const nodeMap = new Map<string, GraphNodeData>();
-  SAMPLE_NODES.forEach((n) => nodeMap.set(n.id, n));
+  nodes.forEach((n) => nodeMap.set(n.id, n));
 
   const getNodeIcon = (type: string) => {
     switch (type) {
@@ -308,7 +323,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
           </defs>
 
           {/* Edges */}
-          {SAMPLE_EDGES.map((edge) => {
+          {edges.map((edge) => {
             const src = nodeMap.get(edge.source);
             const tgt = nodeMap.get(edge.target);
             if (!src || !tgt || src.x === undefined || src.y === undefined || tgt.x === undefined || tgt.y === undefined) {
@@ -385,18 +400,20 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
           })}
 
           {/* Nodes */}
-          {SAMPLE_NODES.map((node) => {
+          {nodes.map((node) => {
             if (node.x === undefined || node.y === undefined) return null;
             const isHighRisk = (node.riskScore ?? 0) >= 80;
+            const nodeOpacity = node.opacity ?? 1;
 
             return (
               <g
                 key={node.id}
                 transform={`translate(${node.x}, ${node.y})`}
-                className="cursor-pointer group"
+                className="cursor-pointer group transition-opacity duration-300"
+                style={{ opacity: nodeOpacity }}
               >
-                {/* Glow ring for high risk entities */}
-                {isHighRisk && (
+                {/* Glow ring for high risk entities (only active when not dimmed) */}
+                {isHighRisk && nodeOpacity >= 0.9 && (
                   <circle
                     r="24"
                     fill="none"
@@ -485,7 +502,7 @@ export const GraphCanvas: React.FC<GraphCanvasProps> = ({
         </div>
 
         <div className="text-slate-400 font-mono text-[11px]">
-          Targeted Network Graph: 6 Nodes • 6 Relationships
+          Temporal Subgraph: {nodes.filter((n) => (n.opacity ?? 1) > 0.5).length} Active Nodes • {edges.length} Intercepted Links
         </div>
       </div>
     </div>
