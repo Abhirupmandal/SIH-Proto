@@ -1,0 +1,322 @@
+{
+  "nodes": [
+    {
+      "id": "suspect_ramesh",
+      "type": "Suspect",
+      "label": "Ramesh",
+      "metadata": { "role": "foot-soldier", "age": 32, "address": "Meerut, UP" }
+    },
+    {
+      "id": "suspect_bunty",
+      "type": "Suspect",
+      "label": "Bunty",
+      "metadata": { "role": "cell-member", "age": 28, "address": "Delhi" }
+    },
+    {
+      "id": "suspect_vicky",
+      "type": "Suspect",
+      "label": "Vicky",
+      "metadata": { "role": "cell-member", "age": 26, "address": "Delhi" }
+    },
+    {
+      "id": "suspect_arif",
+      "type": "Suspect",
+      "label": "Arif",
+      "metadata": { "role": "cut-out/kingpin", "age": 45, "address": "Unknown" }
+    },
+    {
+      "id": "phone_p1",
+      "type": "Phone",
+      "label": "+91-98XXXXXX01",
+      "metadata": { "carrier": "Jio", "owner_hint": "Ramesh" }
+    },
+    {
+      "id": "phone_p2",
+      "type": "Phone",
+      "label": "+91-98XXXXXX02",
+      "metadata": { "carrier": "Airtel", "owner_hint": "Bunty/Vicky shared" }
+    },
+    {
+      "id": "phone_p3",
+      "type": "Phone",
+      "label": "+91-98XXXXXX03",
+      "metadata": { "carrier": "Vi", "owner_hint": "Arif burner" }
+    },
+    {
+      "id": "acct_mule1",
+      "type": "Account",
+      "label": "XXXX-XXXX-1101",
+      "metadata": { "bank": "SBI", "holder": "Bunty mule" }
+    },
+    {
+      "id": "acct_mule2",
+      "type": "Account",
+      "label": "XXXX-XXXX-1102",
+      "metadata": { "bank": "PNB", "holder": "Vicky mule" }
+    },
+    {
+      "id": "acct_arif",
+      "type": "Account",
+      "label": "XXXX-XXXX-9901",
+      "metadata": { "bank": "HDFC", "holder": "Arif" }
+    },
+    {
+      "id": "case_fir42",
+      "type": "CrimeCase",
+      "label": "FIR 42/2026",
+      "metadata": { "station": "GRP Delhi", "sections": "420/120B IPC" }
+    }
+  ],
+  "edges": [
+    {
+      "source": "suspect_ramesh",
+      "target": "phone_p1",
+      "type": "USES",
+      "metadata": {
+        "timestamp": "2026-01-05T09:00:00",
+        "source_document": "cdr_jan2026.csv",
+        "cdr_id": "CDR-100",
+        "fir_id": "FIR-42-2026"
+      }
+    },
+    {
+      "source": "suspect_bunty",
+      "target": "phone_p2",
+      "type": "USES",
+      "metadata": {
+        "timestamp": "2026-01-06T10:00:00",
+        "source_document": "cdr_jan2026.csv",
+        "cdr_id": "CDR-101",
+        "fir_id": "FIR-42-2026"
+      }
+    },
+    {
+      "source": "suspect_vicky",
+      "target": "phone_p2",
+      "type": "USES",
+      "metadata": {
+        "timestamp": "2026-01-06T10:05:00",
+        "source_document": "cdr_jan2026.csv",
+        "cdr_id": "CDR-102",
+        "fir_id": "FIR-42-2026"
+      }
+    },
+    {
+      "source": "suspect_arif",
+      "target": "phone_p3",
+      "type": "USES",
+      "metadata": {
+        "timestamp": "2026-01-07T08:00:00",
+        "source_document": "cdr_jan2026.csv",
+        "cdr_id": "CDR-103",
+        "fir_id": "FIR-42-2026"
+      }
+    },
+    {
+      "source": "phone_p1",
+      "target": "phone_p3",
+      "type": "CALLED",
+      "metadata": {
+        "timestamp": "2026-01-10T21:14:00",
+        "duration": 184,
+        "cdr_id": "CDR-201",
+        "fir_id": "FIR-42-2026",
+        "source_document": "cdr_jan2026.csv"
+      }
+    },
+    {
+      "source": "phone_p2",
+      "target": "phone_p3",
+      "type": "CALLED",
+      "metadata": {
+        "timestamp": "2026-01-11T20:02:00",
+        "duration": 320,
+        "cdr_id": "CDR-202",
+        "fir_id": "FIR-42-2026",
+        "source_document": "cdr_jan2026.csv"
+      }
+    },
+    {
+      "source": "phone_p2",
+      "target": "phone_p3",
+      "type": "CALLED",
+      "metadata": {
+        "timestamp": "2026-01-12T20:15:00",
+        "duration": 410,
+        "cdr_id": "CDR-203",
+        "fir_id": "FIR-42-2026",
+        "source_document": "cdr_jan2026.csv"
+      }
+    },
+    {
+      "source": "phone_p2",
+      "target": "phone_p3",
+      "type": "CALLED",
+      "metadata": {
+        "timestamp": "2026-01-13T19:58:00",
+        "duration": 275,
+        "cdr_id": "CDR-204",
+        "fir_id": "FIR-42-2026",
+        "source_document": "cdr_jan2026.csv"
+      }
+    },
+    {
+      "source": "phone_p3",
+      "target": "phone_p2",
+      "type": "CALLED",
+      "metadata": {
+        "timestamp": "2026-01-13T20:30:00",
+        "duration": 150,
+        "cdr_id": "CDR-205",
+        "fir_id": "FIR-42-2026",
+        "source_document": "cdr_jan2026.csv"
+      }
+    },
+    {
+      "source": "suspect_bunty",
+      "target": "acct_mule1",
+      "type": "OPERATES",
+      "metadata": {
+        "timestamp": "2026-01-08T11:00:00",
+        "source_document": "bank_stmt_mule1.pdf",
+        "fir_id": "FIR-42-2026"
+      }
+    },
+    {
+      "source": "suspect_vicky",
+      "target": "acct_mule2",
+      "type": "OPERATES",
+      "metadata": {
+        "timestamp": "2026-01-08T11:20:00",
+        "source_document": "bank_stmt_mule2.pdf",
+        "fir_id": "FIR-42-2026"
+      }
+    },
+    {
+      "source": "suspect_arif",
+      "target": "acct_arif",
+      "type": "OPERATES",
+      "metadata": {
+        "timestamp": "2026-01-09T09:30:00",
+        "source_document": "bank_stmt_arif.pdf",
+        "fir_id": "FIR-42-2026"
+      }
+    },
+    {
+      "source": "acct_mule1",
+      "target": "acct_arif",
+      "type": "TRANSFERRED",
+      "metadata": {
+        "timestamp": "2026-01-14T13:00:00",
+        "amount": 50000,
+        "transaction_id": "TXN-5001",
+        "fir_id": "FIR-42-2026",
+        "source_document": "bank_stmt_mule1.pdf"
+      }
+    },
+    {
+      "source": "acct_mule1",
+      "target": "acct_arif",
+      "type": "TRANSFERRED",
+      "metadata": {
+        "timestamp": "2026-01-15T13:20:00",
+        "amount": 75000,
+        "transaction_id": "TXN-5002",
+        "fir_id": "FIR-42-2026",
+        "source_document": "bank_stmt_mule1.pdf"
+      }
+    },
+    {
+      "source": "acct_mule2",
+      "target": "acct_arif",
+      "type": "TRANSFERRED",
+      "metadata": {
+        "timestamp": "2026-01-15T14:05:00",
+        "amount": 60000,
+        "transaction_id": "TXN-6001",
+        "fir_id": "FIR-42-2026",
+        "source_document": "bank_stmt_mule2.pdf"
+      }
+    },
+    {
+      "source": "suspect_ramesh",
+      "target": "suspect_arif",
+      "type": "CO_ACCUSED_IN",
+      "metadata": {
+        "fir_id": "FIR-42-2026",
+        "fir_excerpt": "Ramesh named alongside handler Arif in shopkeeper extortion.",
+        "source_document": "fir_42_2026.pdf"
+      }
+    },
+    {
+      "source": "suspect_arif",
+      "target": "suspect_bunty",
+      "type": "CO_ACCUSED_IN",
+      "metadata": {
+        "fir_id": "FIR-42-2026",
+        "fir_excerpt": "Arif directed Bunty to collect mule proceeds.",
+        "source_document": "fir_42_2026.pdf"
+      }
+    },
+    {
+      "source": "suspect_arif",
+      "target": "suspect_vicky",
+      "type": "CO_ACCUSED_IN",
+      "metadata": {
+        "fir_id": "FIR-42-2026",
+        "fir_excerpt": "Arif directed Vicky to rotate SIMs weekly.",
+        "source_document": "fir_42_2026.pdf"
+      }
+    },
+    {
+      "source": "suspect_bunty",
+      "target": "suspect_vicky",
+      "type": "CO_ACCUSED_IN",
+      "metadata": {
+        "fir_id": "FIR-42-2026",
+        "fir_excerpt": "Bunty and Vicky jointly operated shared handset.",
+        "source_document": "fir_42_2026.pdf"
+      }
+    },
+    {
+      "source": "suspect_ramesh",
+      "target": "case_fir42",
+      "type": "CO_ACCUSED_IN",
+      "metadata": {
+        "fir_id": "FIR-42-2026",
+        "fir_excerpt": "Ramesh booked in FIR 42/2026.",
+        "source_document": "fir_42_2026.pdf"
+      }
+    },
+    {
+      "source": "suspect_bunty",
+      "target": "case_fir42",
+      "type": "CO_ACCUSED_IN",
+      "metadata": {
+        "fir_id": "FIR-42-2026",
+        "fir_excerpt": "Bunty booked in FIR 42/2026.",
+        "source_document": "fir_42_2026.pdf"
+      }
+    },
+    {
+      "source": "suspect_vicky",
+      "target": "case_fir42",
+      "type": "CO_ACCUSED_IN",
+      "metadata": {
+        "fir_id": "FIR-42-2026",
+        "fir_excerpt": "Vicky booked in FIR 42/2026.",
+        "source_document": "fir_42_2026.pdf"
+      }
+    },
+    {
+      "source": "suspect_arif",
+      "target": "case_fir42",
+      "type": "CO_ACCUSED_IN",
+      "metadata": {
+        "fir_id": "FIR-42-2026",
+        "fir_excerpt": "Arif listed as handler in FIR 42/2026.",
+        "source_document": "fir_42_2026.pdf"
+      }
+    }
+  ]
+}

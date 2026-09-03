@@ -1,6 +1,136 @@
+# ============================================================
+# Monorepo .gitignore — Python FastAPI backend + Next.js 14 frontend
+# Placed at repo root; patterns cover root and nested dirs.
+# ============================================================
+
+# ---------------- Backend: Python / FastAPI / uv ----------------
+# Virtual environments
 .venv/
+venv/
+env/
+ENV/
+backend/.venv/
+backend/venv/
+backend/env/
+
+# uv artifacts
+.uv/
+uv.lock.tmp
+
+# Python bytecode
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+*.py[cod]
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+*.egg
+*.whl
+
+# Pytest and coverage
 .pytest_cache/
-.DS_Store
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+*.cover
+.hypothesis/
+
+# Type checkers / linters
+.mypy_cache/
+.ruff_cache/
+.pyright/
+
+# Local databases
+*.db
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+
+# Internal raw data dumps/CSVs (keep sample data + dir placeholder)
+backend/data/raw/*
+!backend/data/raw/.gitkeep
+!backend/data/raw/sample/
+!backend/data/raw/*sample*
+
+# Generated dossiers / exports (PDFs in temp/out folders only)
+backend/**/out/*.pdf
+backend/**/temp/*.pdf
+backend/**/tmp/*.pdf
+backend/**/exports/*.pdf
+
+# Local dev server / misc
 *.log
+*.pid
+
+# ---------------- Frontend: Next.js 14 / React / Node ----------------
+# Dependencies
+node_modules/
+frontend/node_modules/
+
+# Next.js build output
+.next/
+frontend/.next/
+out/
+frontend/out/
+
+# Production / static export artifacts
+frontend/*.tgz
+.next/standalone/
+
+# Build / production logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+pnpm-lock.tmp
+
+# Environment variables (keep committed examples)
+.env
+.env.local
+.env.development.local
+.env.production.local
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.production.local
+!.env.example
+!frontend/.env.example
+
+# TypeScript / bundler caches
+*.tsbuildinfo
+.turbo/
+.parcel-cache/
+.eslintcache
+.next/cache/
+
+# ---------------- System & IDEs ----------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Editors / IDEs (VS Code launch.json stays shared)
+.vscode/*
+!.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+
+# Misc temp files
+*.tmp
+*.bak
+*.orig
